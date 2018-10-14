@@ -67,5 +67,4 @@ def generate_base(desired_count):
 
 
 if __name__ == '__main__':
-    for k in generate_base(20):
-        print(k)
+    pass

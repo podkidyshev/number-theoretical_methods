@@ -24,19 +24,18 @@ def factorize(n):
     return base
 
 
-def primitive_root(p):
+def primitive_root(p, max_count=0):
     """Только для простых p"""
     assert prime.isprime(p)
     degs = [(p - 1) // f for f in factorize(p - 1)]  # факторизация фи(p) = p-1
+    answer = []
     for g in range(1, p):
+        print(g, end='\r')
         if all([pow(g, d, p) != 1 for d in degs]):
-            res = g
-            s = set()
-            for idx in range(1, p):
-                a = pow(res, idx, p)
-                assert a not in s
-                s.add(a)
-            return res
+            if not max_count:
+                return g
+            answer.append(g)
+    return answer[:max_count]
 
 
 def square_root(n):
@@ -62,14 +61,15 @@ def equation(a, b, m):
     a, b = a % m, b % m
     d = euclid.euclid(a, m)  # число решений
     if b % d != 0:
-        return None  # нет решений, если d не делит b
+        return  # нет решений, если d не делит b
 
     a_new, b_new, m_new = a // d, b // d, m // d
     d_new, q, r = euclid.eeuclid(a_new, m_new)  # 1 = a * q + m * r
     q, r = q % m, r % m
 
     x0 = (b_new * q) % m_new
-    return [x0 + m_new * j for j in range(d)]
+    for j in range(d):
+        yield x0 + m_new * j
 
 
 def next_yab(y, a, b, params):
@@ -106,9 +106,9 @@ def ppollard(m, g, h, e=0.05):
             aa, bb = (a2i - ai) % (m - 1), (bi - b2i) % (m - 1)  # h^aa = g^bb
             d = euclid.euclid(aa, m - 1)
             if d < square_root(m - 1):
-                solutions = equation(aa, bb, m - 1)
-                if solutions:
-                    return random.choice(solutions)
+                for x in equation(aa, bb, m - 1):
+                    if pow(g, x, m) == h:
+                        return x
 
 
 FUNCS = [(shanks, 'Алгоритм Шенкса'), (ppollard, 'p-метод Полларда')]
@@ -127,7 +127,18 @@ def test_accuracy(m, g, h):
 
 
 if __name__ == '__main__':
-    test_m = int(sys.argv[1]) if len(sys.argv) > 1 else 993121
-    test_g = int(sys.argv[2]) % test_m if len(sys.argv) > 1 else 4096
-    test_h = int(sys.argv[3]) % test_m if len(sys.argv) > 1 else 230611
-    test_accuracy(test_m, test_g, test_h)
+    if sys.argv[1] == '-a':
+        test_m = int(sys.argv[2]) if len(sys.argv) > 2 else 29
+        test_g = int(sys.argv[3]) % test_m if len(sys.argv) > 2 else 2
+        test_h = int(sys.argv[4]) % test_m if len(sys.argv) > 2 else 17
+        test_accuracy(test_m, test_g, test_h)
+    elif sys.argv[1] == '-p':
+        test_m = int(sys.argv[2]) if len(sys.argv) > 2 else 29
+        if '-all' in sys.argv:
+            print('Все образующие группы порядка m = {} (выведем макимум 100 первых):'.format(test_m))
+            print(primitive_root(test_m, 100))
+        else:
+            print('Первый образующий элемент группы порядка m = {}:'.format(test_m), primitive_root(test_m))
+
+# 105251
+# 55609
