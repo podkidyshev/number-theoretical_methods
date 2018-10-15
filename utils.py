@@ -66,5 +66,10 @@ def generate_base(desired_count):
     return base
 
 
+def matrix_print(a):
+    for row in a:
+        print(row)
+
+
 if __name__ == '__main__':
     pass
