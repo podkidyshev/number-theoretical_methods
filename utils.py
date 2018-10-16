@@ -1,15 +1,81 @@
+from operator import add
+from functools import reduce
+
 import euclid
 
 MAX_B_SIZE = 5000
 MAX_SUBSET = 30
 
 
+class Vector:
+    @staticmethod
+    def zero(n):
+        return [0] * n
+
+    @staticmethod
+    def is_zero(x):
+        return all(el == 0 for el in x)
+
+    @staticmethod
+    def add(x, y, p):
+        return [(xx + yy) % p for xx, yy in zip(x, y)]
+
+    @staticmethod
+    def minus(x, y, p):
+        return [(xx - yy) % p for xx, yy in zip(x, y)]
+
+    @staticmethod
+    def summarise(x, p):
+        return reduce(add, x) % p
+
+    @staticmethod
+    def mul_scalar(x, alpha, p):
+        return [(xx * alpha) % p for xx in x]
+
+    @staticmethod
+    def mul(x, y, p):
+        assert len(x) == len(y)
+        return [(x[i] * y[i]) % p for i in range(len(x))]
+
+    @staticmethod
+    def mul_sum(x, y, p):
+        return Vector.summarise(Vector.mul(x, y, p), p)
+
+
+class Matrix:
+    @staticmethod
+    def t(a):
+        return [[a[i][j] for i in range(len(a))] for j in range(len(a[0]))]
+
+    @staticmethod
+    def column(a, j):
+        return [a[i][j] for i in range(len(a))]
+
+    @staticmethod
+    def mul(a, b, p):
+        assert len(a[0]) == len(b)
+        n, m = len(a), len(b[0])
+        res = [[Vector.mul_sum(a[row], Matrix.column(b, col), p) for col in range(m)] for row in range(n)]
+        return res
+
+    @staticmethod
+    def mul_vec(a, x, p):
+        # return vec of len(x) = Ax
+        return Matrix.t(Matrix.mul(a, Matrix.t([x]), p))[0]
+
+
 def get_inverse(a, m):
+    if a == 0:
+        return 0
     if euclid.euclid(a, m) != 1:
         raise ValueError('Не существует обратного элемента для a={} по модулю m={}'.format(a, m))
     d, x, y = euclid.eeuclid(a, m)
     assert d == 1
     return x % m
+
+
+def ratio(p, q, m):
+    return (p * get_inverse(q, m)) % m
 
 
 def fac2k(a):
