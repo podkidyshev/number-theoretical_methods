@@ -1,6 +1,7 @@
 import sys
 import math
 import random
+import time
 
 import utils
 import prime
@@ -24,18 +25,18 @@ def factorize(n):
     return base
 
 
-def primitive_root(p, max_count=0):
+def primitive_root(p, count=1):
     """Только для простых p"""
     assert prime.isprime(p)
     degs = [(p - 1) // f for f in factorize(p - 1)]  # факторизация фи(p) = p-1
     answer = []
     for g in range(1, p):
-        print(g, end='\r')
+        # print(g, end='\r')
         if all([pow(g, d, p) != 1 for d in degs]):
-            if not max_count:
-                return g
             answer.append(g)
-    return answer[:max_count]
+            if len(answer) == count:
+                break
+    return answer
 
 
 def square_root(n):
@@ -111,34 +112,47 @@ def ppollard(m, g, h, e=0.05):
                         return x
 
 
-FUNCS = [(shanks, 'Алгоритм Шенкса'), (ppollard, 'p-метод Полларда')]
+FUNCS = [(shanks, 'Алгоритм Шенкса'), (ppollard, 'po-метод Полларда')]
 
 
 def test_accuracy(m, g, h):
-    print('Тест корректности алгоритмов по нахождению решения g^x = h\ng - образующая циклической группы порядка m')
+    print('Тест корректности алгоритмов')
     print('Образующий g =', g)
     print('Порядок подгруппы m =', m)
     print('Значение степени h =', h)
 
     for (func, func_name) in FUNCS:
         x = func(m, g, h)
-        assert h == pow(g, x, m)
+        if x is not None:
+            assert h == pow(g, x, m)
         print('{}: {}'.format(func_name, x if x is not None else 'ответ не найден'))
 
 
+def test_speed(m, g, h):
+    print('Тест скорости работы алгоритмов на 1000 запусков')
+    print('Образующий g =', g)
+    print('Порядок подгруппы m =', m)
+    print('Значение степени h =', h)
+
+    for (func, func_name) in FUNCS:
+        start = time.time()
+        for _idx in range(1000):
+            func(m, g, h)
+        print('{}: {:.3f}c'.format(func_name, time.time() - start))
+
+
 if __name__ == '__main__':
-    if sys.argv[1] == '-a':
-        test_m = int(sys.argv[2]) if len(sys.argv) > 2 else 29
-        test_g = int(sys.argv[3]) % test_m if len(sys.argv) > 2 else 2
-        test_h = int(sys.argv[4]) % test_m if len(sys.argv) > 2 else 17
-        test_accuracy(test_m, test_g, test_h)
+    if sys.argv[1] in ('-a', '-s'):
+        test_m = int(sys.argv[2])
+        test_g = int(sys.argv[3]) % test_m
+        test_h = int(sys.argv[4]) % test_m
+        test_func = test_accuracy if sys.argv[1] == '-a' else test_speed
+        test_func(test_m, test_g, test_h)
     elif sys.argv[1] == '-p':
-        test_m = int(sys.argv[2]) if len(sys.argv) > 2 else 29
-        if '-all' in sys.argv:
-            print('Все образующие группы порядка m = {} (выведем макимум 100 первых):'.format(test_m))
-            print(primitive_root(test_m, 100))
-        else:
-            print('Первый образующий элемент группы порядка m = {}:'.format(test_m), primitive_root(test_m))
+        test_m = int(sys.argv[2])
+        test_count = int(sys.argv[3]) if len(sys.argv) > 3 else 1
+        print('Первые {} образующих группы порядка m = {}:'.format(test_count, test_m))
+        print(primitive_root(test_m, test_count))
 
 # 105251
 # 55609
