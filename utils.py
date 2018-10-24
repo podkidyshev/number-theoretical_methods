@@ -44,6 +44,10 @@ class Vector:
 
 class Matrix:
     @staticmethod
+    def zero(n, m):
+        return [[0 if i != j else 1 for j in range(m)] for i in range(n)]
+
+    @staticmethod
     def t(a):
         return [[a[i][j] for i in range(len(a))] for j in range(len(a[0]))]
 
@@ -59,9 +63,66 @@ class Matrix:
         return res
 
     @staticmethod
+    def mul_scalar(a, alpha, p):
+        return [[a[i][j] * alpha % p for j in range(len(a[0]))] for i in range(len(a))]
+
+    @staticmethod
     def mul_vec(a, x, p):
         # return vec of len(x) = Ax
         return Matrix.t(Matrix.mul(a, Matrix.t([x]), p))[0]
+
+    @staticmethod
+    def power(a, deg, p):
+        res = Matrix.zero(len(a), len(a))
+        for _idx in range(deg):
+            res = Matrix.mul(res, a, p)
+        return res
+
+
+class Polynomial:
+    @staticmethod
+    def ratio(p1, p2, p):
+        p1, p2 = p1[:], p2[:]
+        q = []
+        while len(p1) >= len(p2):
+            qi = ratio(p1[0], p2[0], p)
+            q.append(qi)
+            for j in range(len(p2)):
+                p1[j] = (p1[j] - p2[j] * qi) % p
+            assert p1[0] == 0
+            p1 = p1[1:]
+        while len(p1) > 1 and p1[0] == 0:
+            p1 = p1[1:]
+        return q, p1
+
+    @staticmethod
+    def minus(p1, p2, p):
+        if len(p1) < len(p2):
+            while len(p1) < len(p2):
+                p1 = [0] + p1
+            while len(p2) < len(p1):
+                p2 = [0] + p2
+        res = [(p1i - p2i) % p for p1i, p2i in zip(p1, p2)]
+        while len(res) > 1 and res[0] == 0:
+            res = res[1:]
+        return res
+
+    @staticmethod
+    def mul(p1, p2, p):
+        res = [0] * (len(p1) + len(p2) - 1)
+        for i in range(len(p1)):
+            for j in range(len(p2)):
+                res[i + j] = (res[i + j] + p1[i] * p2[j]) % p
+        while len(res) > 1 and res[0] == 0:
+            res = res[1:]
+        return res
+
+    @staticmethod
+    def compute(f, v, p):
+        res = 0
+        for power, fi in enumerate(reversed(f)):
+            res = (res + pow(v, power, p) * fi) % p
+        return res
 
 
 def get_inverse(a, m):
