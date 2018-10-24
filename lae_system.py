@@ -30,30 +30,6 @@ def lanczos(les: LinearEquationSystem):
     assert les.n == les.m
     p = les.p
     ws = [M.column(les.b, 0)]
-    while True:
-        if not V.is_zero(ws[-1]) and mul_a(ws[-1], ws[-1], les.a, p) == 0:
-            return
-        if V.is_zero(ws[-1]):
-            x = V.zero(les.n)
-            for wi in ws[:-1]:
-                scalar = ratio(V.mul_sum(wi, ws[0], p),
-                               V.mul_sum(wi, wi, p), p)
-                x = V.add(x, V.mul_scalar(wi, scalar, les.p), p)
-            return x
-
-        vec = V.zero(les.n)
-        for wj in ws:
-            alpha = alpha_ij(ws[-1], wj, les.a, p)
-            vec = V.add(vec, V.mul_scalar(wj, alpha, les.p), p)
-        vec = V.mul_scalar(vec, -1, p)
-        wi = V.minus(M.mul_vec(les.a, ws[-1], p), vec, p)
-        ws.append(wi)
-
-
-def lanczos2(les: LinearEquationSystem):
-    assert les.n == les.m
-    p = les.p
-    ws = [M.column(les.b, 0)]
     vs = [None, M.mul_vec(les.a, ws[0], p)]
     ws.append(V.minus(vs[1],
                       V.mul_scalar(ws[0],
@@ -87,6 +63,6 @@ if __name__ == '__main__':
         '3 4 5 5']  # 1, 2, 3 is solution too
     test_p = 7
     test_les = LinearEquationSystem(test_system, test_p)
-    res = lanczos2(test_les)
+    res = lanczos(test_les)
     print(res)
     print(M.mul(test_les.a, M.t([res]), test_les.p) == test_les.b)
