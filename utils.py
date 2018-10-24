@@ -81,8 +81,20 @@ class Matrix:
 
 class Polynomial:
     @staticmethod
-    def ratio(p1, p2, p):
-        p1, p2 = p1[:], p2[:]
+    def shrink(p):
+        while len(p) > 1 and p[0] == 0:
+            p = p[1:]
+        if not len(p):
+            p = [0]
+        return p
+
+    @staticmethod
+    def ratio(p11, p22, p):
+        p1, p2 = p11[:], p22[:]
+        if not len(p1):
+            p1 = [0]
+        if not len(p2):
+            p2 = [0]
         q = []
         while len(p1) >= len(p2):
             qi = ratio(p1[0], p2[0], p)
@@ -91,9 +103,7 @@ class Polynomial:
                 p1[j] = (p1[j] - p2[j] * qi) % p
             assert p1[0] == 0
             p1 = p1[1:]
-        while len(p1) > 1 and p1[0] == 0:
-            p1 = p1[1:]
-        return q, p1
+        return Polynomial.shrink(q), Polynomial.shrink(p1)
 
     @staticmethod
     def minus(p1, p2, p):
@@ -103,9 +113,7 @@ class Polynomial:
             while len(p2) < len(p1):
                 p2 = [0] + p2
         res = [(p1i - p2i) % p for p1i, p2i in zip(p1, p2)]
-        while len(res) > 1 and res[0] == 0:
-            res = res[1:]
-        return res
+        return Polynomial.shrink(res)
 
     @staticmethod
     def mul(p1, p2, p):
@@ -113,15 +121,20 @@ class Polynomial:
         for i in range(len(p1)):
             for j in range(len(p2)):
                 res[i + j] = (res[i + j] + p1[i] * p2[j]) % p
-        while len(res) > 1 and res[0] == 0:
-            res = res[1:]
-        return res
+        return Polynomial.shrink(res)
 
     @staticmethod
     def compute(f, v, p):
         res = 0
         for power, fi in enumerate(reversed(f)):
             res = (res + pow(v, power, p) * fi) % p
+        return res
+
+    @staticmethod
+    def compute2(f, v, p):
+        res = 0
+        for fi, vi in zip(f, reversed(v)):
+            res = (res + fi * vi) % p
         return res
 
 
@@ -199,4 +212,5 @@ def matrix_print(a):
 
 
 if __name__ == '__main__':
+    # print(Polynomial.ratio([1, 0, 0, 0, 0, 0, 0], [1, 6, 1, 6, 1, 6], 7))
     pass

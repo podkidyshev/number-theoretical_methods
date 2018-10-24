@@ -60,9 +60,8 @@ def lanczos(les: LinearEquationSystem):
 
 def berlekamp(seq: list, p: int):
     n = len(seq) // 2
-    r0 = [1] + [0] * (2 * n - 1)
-    r1 = seq[:]
-    r1.reverse()
+    r0 = [1] + [0] * (2 * n)
+    r1 = Poly.shrink(seq[:])
     v0, v1 = [0], [1]
 
     while n <= len(r1):
@@ -71,9 +70,10 @@ def berlekamp(seq: list, p: int):
         v0, v1 = v1, v
         r0, r1 = r1, r
 
-    for i in range(len(v1)):
-        v1[i] = ratio(v1[i], v1[-1], p)
-    assert len(v1) <= n
+    v1, r2 = Poly.ratio(v1, [v1[-1]], p)
+    assert r2 == [0]
+    assert Poly.compute2(v1, seq[:len(v1)], p) == 0
+    # assert len(v1) <= n
     return v1
 
 
@@ -105,6 +105,8 @@ def wiedemann(les: LinearEquationSystem):
             aib = M.mul_vec(ai, b, p)
             uaib = V.mul_sum(u, aib, p)
             seq.append(uaib)
+
+        assert len(seq)
         f = berlekamp(seq, p)
 
         ys.append(V.add(ys[k], M.mul_vec(f_tilda(f, a, p), b, p), p))
@@ -115,12 +117,15 @@ def wiedemann(les: LinearEquationSystem):
 
 
 if __name__ == '__main__':
-    test_system = [
-        '1 1 3 5',
-        '1 6 4 4',
-        '3 4 5 5']  # 1, 2, 3 is solution too
-    test_p = 7
-    test_les = LinearEquationSystem(test_system, test_p)
-    res = wiedemann(test_les)
-    print(res)
-    print(M.mul(test_les.a, M.t([res]), test_les.p) == test_les.b)
+    # _system = [
+    #     '1 1 3 5',
+    #     '1 6 4 4',
+    #     '3 4 6 5']  # 1, 2, 3 is solution too
+    # _p = 7
+    # _les = LinearEquationSystem(_system, _p)
+    # _res = wiedemann(_les)
+    # print(_res)
+    # print(M.mul(_les.a, M.t([_res]), _les.p) == _les.b)
+    print(berlekamp([1, 6, 1, 6, 1, 6], 7))
+    print(berlekamp([2, 1, 1, 5, 6, 6], 7))  # 3x + 2y
+    print(berlekamp([0, 1, 2, 4, 6, 0], 7))
