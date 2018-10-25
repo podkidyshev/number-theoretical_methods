@@ -3,6 +3,9 @@ from functools import reduce
 
 import euclid
 
+import numpy
+import numpy.linalg
+
 MAX_B_SIZE = 5000
 MAX_SUBSET = 30
 
@@ -45,6 +48,10 @@ class Vector:
 class Matrix:
     @staticmethod
     def zero(n, m):
+        return [[0 for _j in range(m)] for _i in range(n)]
+
+    @staticmethod
+    def unit(n, m):
         return [[0 if i != j else 1 for j in range(m)] for i in range(n)]
 
     @staticmethod
@@ -73,10 +80,28 @@ class Matrix:
 
     @staticmethod
     def power(a, deg, p):
-        res = Matrix.zero(len(a), len(a))
+        res = Matrix.unit(len(a), len(a))
         for _idx in range(deg):
             res = Matrix.mul(res, a, p)
         return res
+
+    @staticmethod
+    def sum(a, b, p):
+        assert len(a) == len(b) and len(a[0]) == len(b[0])
+        return [[(ela + elb) % p for ela, elb in zip(rowa, rowb)] for rowa, rowb in zip(a, b)]
+
+    @staticmethod
+    def det(a, p):
+        a = numpy.array(a)
+        return int(numpy.linalg.det(a)) % p
+
+    @staticmethod
+    def submatrix(a, lt, rb):
+        return [[a[i][j] for j in range(lt[1], rb[1] + 1)] for i in range(lt[0], rb[0] + 1)]
+
+    @staticmethod
+    def inverse(a, p):
+        pass
 
 
 class Polynomial:
@@ -212,5 +237,8 @@ def matrix_print(a):
 
 
 if __name__ == '__main__':
-    # print(Polynomial.ratio([1, 0, 0, 0, 0, 0, 0], [1, 6, 1, 6, 1, 6], 7))
-    pass
+    _a = [
+        [1, 1, 3],
+        [1, 6, 4],
+        [3, 4, 6]]
+    print(Matrix.submatrix(_a, (2, 0), (2, 2)))

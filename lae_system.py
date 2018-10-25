@@ -77,6 +77,13 @@ def berlekamp(seq: list, p: int):
     return v1
 
 
+def fa(f, a, p):
+    res = M.zero(len(a), len(a))
+    for power, fi in enumerate(reversed(f)):
+        res = M.sum(res, M.mul_scalar(M.power(a, power, p), fi, p), p)
+    return res
+
+
 def f_tilda(f, a, p):
     fz0 = Poly.compute(f, 0, p)
     assert fz0 == 1
@@ -100,11 +107,23 @@ def wiedemann(les: LinearEquationSystem):
     while bs[k] != V.zero(n):
         u = [random.randint(0, p - 1) for _idx in range(n)]
         seq = []
+        qq = 0
         for i in range(2 * (n - ds[k])):
             ai = M.power(a, i, p)
             aib = M.mul_vec(ai, b, p)
             uaib = V.mul_sum(u, aib, p)
             seq.append(uaib)
+            qq = i
+        qq += 1
+        if len(seq):
+            while seq[0] == 0:
+                print('kek')
+                ai = M.power(a, qq, p)
+                aib = M.mul_vec(ai, b, p)
+                uaib = V.mul_sum(u, aib, p)
+                seq.append(uaib)
+                seq = seq[1:]
+                qq += 1
 
         assert len(seq)
         f = berlekamp(seq, p)
@@ -117,15 +136,15 @@ def wiedemann(les: LinearEquationSystem):
 
 
 if __name__ == '__main__':
-    # _system = [
-    #     '1 1 3 5',
-    #     '1 6 4 4',
-    #     '3 4 6 5']  # 1, 2, 3 is solution too
-    # _p = 7
-    # _les = LinearEquationSystem(_system, _p)
-    # _res = wiedemann(_les)
-    # print(_res)
-    # print(M.mul(_les.a, M.t([_res]), _les.p) == _les.b)
-    print(berlekamp([1, 6, 1, 6, 1, 6], 7))
-    print(berlekamp([2, 1, 1, 5, 6, 6], 7))  # 3x + 2y
-    print(berlekamp([0, 1, 2, 4, 6, 0], 7))
+    _system = [
+        '1 1 3 5',
+        '1 6 4 4',
+        '3 4 6 5']  # 1, 2, 3 is solution too
+    _p = 7
+    _les = LinearEquationSystem(_system, _p)
+    _res = wiedemann(_les)
+    print(_res)
+    print(M.mul(_les.a, M.t([_res]), _les.p) == _les.b)
+    # print(berlekamp([1, 6, 1, 6, 1, 6], 7))
+    # print(berlekamp([2, 1, 1, 5, 6, 6], 7))  # 3x + 2y
+    # print(berlekamp([0, 1, 2, 4, 6, 0], 7))
