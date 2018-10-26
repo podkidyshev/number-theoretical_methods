@@ -75,7 +75,6 @@ def berlekamp(seq: list, p: int):
         v1, r2 = Poly.ratio(v1, [v1[-1]], p)
         assert r2 == [0]
     assert Poly.compute2(v1, seq[:len(v1)], p) == 0
-    # assert len(v1) <= n + 1
     return v1
 
 
@@ -95,27 +94,32 @@ def f_tilda(f, a, p):
 
 def wiedemann(les: LinearEquationSystem):
     a, b, p, n = les.a, M.t(les.b)[0], les.p, les.n
-    bs = [b]
-    ys = [[0] * n]
-    ds = [0]
-    k = 0
-    while bs[k] != V.zero(n):
-        u = [random.randint(0, p - 1) for _idx in range(n)]
-        seq = []
-        for i in range(2 * (n - ds[k])):
-            ai = M.power(a, i, p)
-            aib = M.mul_vec(ai, b, p)
-            uaib = V.mul_sum(u, aib, p)
-            seq.append(uaib)
+    while True:
+        bs = [b]
+        ys = [[0] * n]
+        ds = [0]
+        k = 0
 
-        assert len(seq)
-        f = berlekamp(seq, p)
+        while bs[k] != V.zero(n):
+            u = [random.randint(0, p - 1) for _idx in range(n)]
+            seq = []
+            for i in range(2 * (n - ds[k])):
+                ai = M.power(a, i, p)
+                aib = M.mul_vec(ai, b, p)
+                uaib = V.mul_sum(u, aib, p)
+                seq.append(uaib)
 
-        ys.append(V.add(ys[k], M.mul_vec(f_tilda(f, a, p), b, p), p))
-        bs.append(V.add(b, M.mul_vec(a, ys[k + 1], p), p))
-        ds.append(ds[k] + len(f))
-        k += 1
-    return V.mul_scalar(ys[k], -1, p)
+            if not len(seq):
+                break
+            f = berlekamp(seq, p)
+
+            ys.append(V.add(ys[k], M.mul_vec(f_tilda(f, a, p), b, p), p))
+            bs.append(V.add(b, M.mul_vec(a, ys[k + 1], p), p))
+            ds.append(ds[k] + len(f))
+            k += 1
+        if bs[k] != V.zero(n):
+            continue
+        return V.mul_scalar(ys[k], -1, p)
 
 
 #######################################################################
