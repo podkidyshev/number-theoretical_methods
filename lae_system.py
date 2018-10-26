@@ -1,3 +1,4 @@
+import sys
 import random
 
 from utils import Vector as V, Matrix as M, Polynomial as Poly, ratio
@@ -117,16 +118,42 @@ def wiedemann(les: LinearEquationSystem):
     return V.mul_scalar(ys[k], -1, p)
 
 
+#######################################################################
+def gen_test(size, p):
+    a = [[random.randint(0, p - 1) for _j in range(size)] for _i in range(size)]
+    while M.det(a, p) == 0:
+        a = [[random.randint(0, p - 1) for _j in range(size)] for _i in range(size)]
+    b = [[random.randint(0, p - 1)] for _i in range(size)]
+    for row, bi in zip(a, b):
+        print(*row, *bi)
+
+
 if __name__ == '__main__':
-    _system = [
-        '1 1 3 5',
-        '1 6 4 4',
-        '3 4 6 5']
-    _p = 7
-    _les = LinearEquationSystem(_system, _p)
-    _res = wiedemann(_les)
-    print(_res)
-    print(M.mul(_les.a, M.t([_res]), _les.p) == _les.b)
-    # print(berlekamp([1, 6, 1, 6, 1, 6], 7))
-    # print(berlekamp([2, 1, 1, 5, 6, 6], 7))  # 3x + 2y
-    # print(berlekamp([0, 1, 2, 4, 6, 0], 7))
+    operation = sys.argv[1]
+
+    if operation == '-a':
+        # _system = [
+        #     '1 1 3 5',
+        #     '1 6 4 4',
+        #     '3 4 6 5']
+        _system = [
+            '1 1 3 6 1 4 3 1',
+            '1 1 6 2 1 5 0 3',
+            '3 4 6 0 4 2 3 1',
+            '0 5 4 6 0 1 6 0',
+            '5 2 0 4 2 3 6 4',
+            '2 5 1 0 4 2 5 0',
+            '4 0 6 1 3 2 1 0'
+        ]
+        _p = 7
+        _les = LinearEquationSystem(_system, _p)
+        _res = wiedemann(_les)
+        print(_res)
+        print(M.mul(_les.a, M.t([_res]), _les.p) == _les.b)
+        # print(berlekamp([1, 6, 1, 6, 1, 6], 7))
+        # print(berlekamp([2, 1, 1, 5, 6, 6], 7))  # 3x + 2y
+        # print(berlekamp([0, 1, 2, 4, 6, 0], 7))
+    elif operation == '-g':
+        gen_test(7, 7)
+    else:
+        print('Wrong operation')
