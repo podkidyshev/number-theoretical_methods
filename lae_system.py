@@ -73,7 +73,7 @@ def berlekamp(seq: list, p: int):
     v1, r2 = Poly.ratio(v1, [v1[-1]], p)
     assert r2 == [0]
     assert Poly.compute2(v1, seq[:len(v1)], p) == 0
-    # assert len(v1) <= n
+    assert len(v1) <= n + 1
     return v1
 
 
@@ -107,23 +107,11 @@ def wiedemann(les: LinearEquationSystem):
     while bs[k] != V.zero(n):
         u = [random.randint(0, p - 1) for _idx in range(n)]
         seq = []
-        qq = 0
         for i in range(2 * (n - ds[k])):
             ai = M.power(a, i, p)
             aib = M.mul_vec(ai, b, p)
             uaib = V.mul_sum(u, aib, p)
             seq.append(uaib)
-            qq = i
-        qq += 1
-        if len(seq):
-            while seq[0] == 0:
-                print('kek')
-                ai = M.power(a, qq, p)
-                aib = M.mul_vec(ai, b, p)
-                uaib = V.mul_sum(u, aib, p)
-                seq.append(uaib)
-                seq = seq[1:]
-                qq += 1
 
         assert len(seq)
         f = berlekamp(seq, p)

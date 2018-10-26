@@ -92,16 +92,33 @@ class Matrix:
 
     @staticmethod
     def det(a, p):
-        a = numpy.array(a)
-        return int(numpy.linalg.det(a)) % p
+        assert len(a) == len(a[0])
+        return int(round(numpy.linalg.det(numpy.array(a)))) % p
 
     @staticmethod
     def submatrix(a, lt, rb):
         return [[a[i][j] for j in range(lt[1], rb[1] + 1)] for i in range(lt[0], rb[0] + 1)]
 
     @staticmethod
+    def remove_row_column(a, row, column):
+        return [[a[i][j] for j in range(len(a[0])) if j != column] for i in range(len(a)) if i != row]
+
+    @staticmethod
     def inverse(a, p):
-        pass
+        assert len(a) == len(a[0])
+        assert Matrix.det(a, p) != 0
+        a_, n = Matrix.t(a), len(a)
+        a_inv = []
+        for i in range(n):
+            a_inv.append([])
+            for j in range(n):
+                fac_1 = pow(-1, i + 1 + j + 1, p)
+                fac_det = Matrix.det(Matrix.remove_row_column(a_, i, j), p)
+                a_inv[i].append((fac_1 * fac_det) % p)
+        a_det = Matrix.det(a, p)
+        a_det_inv = get_inverse(a_det, p)
+        print(a_det, a_det_inv)
+        return Matrix.mul_scalar(a_inv, a_det_inv, p)
 
 
 class Polynomial:
@@ -237,8 +254,10 @@ def matrix_print(a):
 
 
 if __name__ == '__main__':
+    _p = 7
     _a = [
         [1, 1, 3],
         [1, 6, 4],
         [3, 4, 6]]
-    print(Matrix.submatrix(_a, (2, 0), (2, 2)))
+    _a_inv = Matrix.inverse(_a, _p)
+    print(Matrix.mul(_a, _a_inv, _p))
