@@ -70,10 +70,11 @@ def berlekamp(seq: list, p: int):
         v0, v1 = v1, v
         r0, r1 = r1, r
 
-    v1, r2 = Poly.ratio(v1, [v1[-1]], p)
-    assert r2 == [0]
+    if v1[-1] != 0:
+        v1, r2 = Poly.ratio(v1, [v1[-1]], p)
+        assert r2 == [0]
     assert Poly.compute2(v1, seq[:len(v1)], p) == 0
-    assert len(v1) <= n + 1
+    # assert len(v1) <= n + 1
     return v1
 
 
