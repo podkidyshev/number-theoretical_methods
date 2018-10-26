@@ -105,8 +105,7 @@ class Matrix:
 
     @staticmethod
     def inverse(a, p):
-        assert len(a) == len(a[0])
-        assert Matrix.det(a, p) != 0
+        assert len(a) == len(a[0]) and Matrix.det(a, p) != 0
         a_, n = Matrix.t(a), len(a)
         a_inv = []
         for i in range(n):
@@ -115,10 +114,7 @@ class Matrix:
                 fac_1 = pow(-1, i + 1 + j + 1, p)
                 fac_det = Matrix.det(Matrix.remove_row_column(a_, i, j), p)
                 a_inv[i].append((fac_1 * fac_det) % p)
-        a_det = Matrix.det(a, p)
-        a_det_inv = get_inverse(a_det, p)
-        print(a_det, a_det_inv)
-        return Matrix.mul_scalar(a_inv, a_det_inv, p)
+        return Matrix.mul_scalar(a_inv, get_inverse(Matrix.det(a, p), p), p)
 
 
 class Polynomial:
