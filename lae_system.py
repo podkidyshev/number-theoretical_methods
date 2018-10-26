@@ -85,17 +85,10 @@ def fa(f, a, p):
 
 
 def f_tilda(f, a, p):
-    fz0 = Poly.compute(f, 0, p)
-    assert fz0 == 1
-    res = []
-    for i in range(len(a)):
-        res.append([])
-        for j in range(len(a[0])):
-            z = a[i][j]
-            fz = Poly.compute(f, z, p)
-            fz_tilda = ratio(fz - fz0, z, p)
-            res[-1].append(fz_tilda)
-    return res
+    gz = fa(f, a, p)
+    g0 = fa(f, M.zero(len(a), len(a)), p)
+    numenator = M.sum(gz, M.mul_scalar(g0, p - 1, p), p)
+    return M.mul(numenator, M.inverse(a, p), p)
 
 
 def wiedemann(les: LinearEquationSystem):
@@ -127,7 +120,7 @@ if __name__ == '__main__':
     _system = [
         '1 1 3 5',
         '1 6 4 4',
-        '3 4 6 5']  # 1, 2, 3 is solution too
+        '3 4 6 5']
     _p = 7
     _les = LinearEquationSystem(_system, _p)
     _res = wiedemann(_les)
