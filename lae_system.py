@@ -66,6 +66,8 @@ def berlekamp(seq: list, p: int):
     v0, v1 = [0], [1]
 
     while n <= len(r1):
+        if r1 == [0]:
+            return None
         q, r = Poly.ratio(r0, r1, p)
         v = Poly.minus(v0, Poly.mul(q, v1, p), p)
         v0, v1 = v1, v
@@ -74,7 +76,7 @@ def berlekamp(seq: list, p: int):
     if v1[-1] != 0:
         v1, r2 = Poly.ratio(v1, [v1[-1]], p)
         assert r2 == [0]
-    assert Poly.compute2(v1, seq[:len(v1)], p) == 0
+    assert all(Poly.compute2(v1, seq[i:i + len(v1)], p) == 0 for i in range(len(seq) - len(v1)))
     return v1
 
 
@@ -92,7 +94,7 @@ def f_tilda(f, a, p):
     return M.mul(numenator, M.inverse(a, p), p)
 
 
-def wiedemann(les: LinearEquationSystem):
+def wiedemann1(les: LinearEquationSystem):
     a, b, p, n = les.a, M.t(les.b)[0], les.p, les.n
     while True:
         bs = [b]
@@ -112,6 +114,8 @@ def wiedemann(les: LinearEquationSystem):
             if not len(seq):
                 break
             f = berlekamp(seq, p)
+            if f is None:
+                break
 
             ys.append(V.add(ys[k], M.mul_vec(f_tilda(f, a, p), b, p), p))
             bs.append(V.add(b, M.mul_vec(a, ys[k + 1], p), p))
@@ -120,6 +124,36 @@ def wiedemann(les: LinearEquationSystem):
         if bs[k] != V.zero(n):
             continue
         return V.mul_scalar(ys[k], -1, p)
+
+
+def wiedemann2(les: LinearEquationSystem):
+    a, b, p, n = les.a, M.t(les.b)[0], les.p, les.n
+    a_powers = [M.unit(n, n)]
+    for i in range(1, 2 * n):
+        a_powers.append(M.mul(a_powers[-1], a, p))
+    aib = [M.mul_vec(ai, b, p) for ai in a_powers]
+    k = 0
+    gs = [[1]]
+    uk1 = [0, 1] + ([0] * (n - 2))
+    while Poly.deg(gs[k]) < n and k < n:
+        seq = []
+        for i in range(2 * n - Poly.deg(gs[k])):
+            gab = M.mul_vec(fa(gs[k], a, p), aib[i], p)
+            ugab = V.mul_sum(uk1, gab, p)
+            seq.append(ugab)
+
+        assert len(seq)
+        f = berlekamp(seq, p)
+        gs.append(Poly.mul(f, gs[k], p))
+        k += 1
+        uk1 = ([0] * k) + [1] + ([0] * (n - k - 1))
+
+    print('k =', k)
+    g = gs[-1]
+    x = V.zero(n)
+    for i in range(Poly.deg(g)):
+        x = V.add(x, V.mul_scalar(aib[i], -g[i], p), p)
+    return x
 
 
 #######################################################################
@@ -139,38 +173,42 @@ if __name__ == '__main__':
         # _system = [
         #     '1 1 3 5',
         #     '1 6 4 4',
-        #     '3 4 6 5']
+        #     '3 4 6 5'
+        # ]
         # _system = [
-        #     '1 1 0 6 1 4 3 1',
-        #     '0 0 6 2 0 5 0 3',
-        #     '3 4 6 0 4 2 0 1',
-        #     '0 5 4 6 0 1 6 0',
-        #     '5 2 0 4 0 0 6 4',
-        #     '2 0 1 0 4 2 0 0',
-        #     '4 0 6 0 3 0 1 5'
+        #     '1 0 4 0 3',
+        #     '0 6 0 1 4',
+        #     '0 1 2 0 3',
+        #     '0 1 0 3 1'
+        # ]
+        # _system = [
+        #     '0 0 1 1 2 4 0 3',
+        #     '4 4 1 6 6 0 6 0',
+        #     '2 6 3 6 6 4 1 3',
+        #     '2 2 6 5 3 3 1 0',
+        #     '0 6 5 5 6 6 6 4',
+        #     '4 0 3 2 5 2 5 2',
+        #     '6 6 5 6 0 2 4 4'
         # ]
         _system = [
-            '312 345 0 198 116 206 128 0 277 169 218',
-            '60 0 255 83 238 271 0 25 63 191 267',
-            '329 257 0 193 232 330 318 0 114 172 143',
-            '157 0 76 56 198 16 0 0 310 330 86',
-            '0 168 0 211 0 308 181 316 5 0 283',
-            '114 346 0 165 272 348 5 18 216 0 0',
-            '3 145 0 97 268 150 0 283 0 90 324',
-            '0 97 50 0 343 69 210 162 0 258 2',
-            '61 0 37 169 114 290 64 164 0 0 104',
-            '0 171 0 93 0 208 251 86 115 0 65',
-
+            '12 17 9 5 13 24 22 2 9 5 15',
+            '4 19 5 21 2 26 20 21 8 21 17',
+            '16 21 1 28 21 24 16 16 7 8 15',
+            '24 25 12 26 9 27 27 17 5 19 15',
+            '23 15 15 18 0 1 19 3 2 16 10',
+            '12 16 5 11 27 11 4 15 1 2 11',
+            '0 24 14 6 26 6 25 8 7 17 21',
+            '20 6 24 20 17 6 0 25 7 13 9',
+            '5 7 14 24 9 28 15 8 11 8 0',
+            '5 7 13 18 6 17 5 8 24 10 0'
         ]
-        _p = 349
+        _p = 29  # 349
         _les = LinearEquationSystem(_system, _p)
-        _res = wiedemann(_les)
+        assert M.det(_les.a, _les.p) != 0
+        _res = wiedemann2(_les)
         print(_res)
         print(M.mul(_les.a, M.t([_res]), _les.p) == _les.b)
-        # print(berlekamp([1, 6, 1, 6, 1, 6], 7))
-        # print(berlekamp([2, 1, 1, 5, 6, 6], 7))  # 3x + 2y
-        # print(berlekamp([0, 1, 2, 4, 6, 0], 7))
     elif operation == '-g':
-        gen_test(10, 349)
+        gen_test(10, 29)
     else:
         print('Wrong operation')

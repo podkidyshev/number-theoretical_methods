@@ -175,6 +175,10 @@ class Polynomial:
             res = (res + fi * vi) % p
         return res
 
+    @staticmethod
+    def deg(p):
+        return len(p) - 1
+
 
 def get_inverse(a, m):
     if a == 0:
