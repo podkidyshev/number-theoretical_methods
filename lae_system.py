@@ -3,6 +3,8 @@ import random
 
 from utils import Vector as V, Matrix as M, Polynomial as Poly, ratio
 
+MAX_TRIALS = 20
+
 
 class LinearEquationSystem:
     def __init__(self, matrix, p):
@@ -39,7 +41,7 @@ def lanczos(les: LinearEquationSystem):
                                    ratio(V.mul_sum(vs[1], vs[1], p),
                                          V.mul_sum(ws[0], vs[1], p), p), p), p))
 
-    while True:
+    for trial in range(MAX_TRIALS):
         if V.mul_sum(ws[-1], M.mul_vec(les.a, ws[-1], p), p) == 0:
             if V.is_zero(ws[-1]):
                 x = V.zero(les.n)
@@ -96,7 +98,7 @@ def f_tilda(f, a, p):
 
 def wiedemann1(les: LinearEquationSystem):
     a, b, p, n = les.a, M.t(les.b)[0], les.p, les.n
-    while True:
+    for trial in range(MAX_TRIALS):
         bs = [b]
         ys = [[0] * n]
         ds = [0]
@@ -122,6 +124,7 @@ def wiedemann1(les: LinearEquationSystem):
             ds.append(ds[k] + len(f))
             k += 1
         if bs[k] != V.zero(n):
+            print(trial, end='\r')
             continue
         return V.mul_scalar(ys[k], -1, p)
 
@@ -157,58 +160,51 @@ def wiedemann2(les: LinearEquationSystem):
 
 
 #######################################################################
-def gen_test(size, p):
+def gen_test(size, p, sym):
     a = [[random.randint(0, p - 1) for _j in range(size)] for _i in range(size)]
     while M.det(a, p) == 0:
         a = [[random.randint(0, p - 1) for _j in range(size)] for _i in range(size)]
+    if sym:
+        for i in range(len(a)):
+            for j in range(i + 1):
+                a[i][j] = a[j][i]
     b = [[random.randint(0, p - 1)] for _i in range(size)]
+
+    print(size, p)
     for row, bi in zip(a, b):
         print(*row, *bi)
+
+
+def read(filename):
+    with open(filename) as f:
+        n, p = list(map(int, f.readline().split(' ')))
+        a = [f.readline() for _idx in range(n)]
+        return p, n, a
+
+
+#######################################################################
+FUNCS = [(lanczos, 'Алгоритм Ланцоша'),
+         (wiedemann1, 'Алгоритм Видемана (вероятностный)')]
+
+
+def test_accuracy(les):
+    for func, func_name in FUNCS:
+        x = func(les)
+        if x is None:
+            print(func_name, ': ответ не найден')
+        else:
+            correct = M.mul(les.a, M.t([x]), les.p) == les.b
+            print(func_name, ':', x, 'Ответ верный' if correct else 'Ответ неверный')
 
 
 if __name__ == '__main__':
     operation = sys.argv[1]
 
     if operation == '-a':
-        # _system = [
-        #     '1 1 3 5',
-        #     '1 6 4 4',
-        #     '3 4 6 5'
-        # ]
-        # _system = [
-        #     '1 0 4 0 3',
-        #     '0 6 0 1 4',
-        #     '0 1 2 0 3',
-        #     '0 1 0 3 1'
-        # ]
-        # _system = [
-        #     '0 0 1 1 2 4 0 3',
-        #     '4 4 1 6 6 0 6 0',
-        #     '2 6 3 6 6 4 1 3',
-        #     '2 2 6 5 3 3 1 0',
-        #     '0 6 5 5 6 6 6 4',
-        #     '4 0 3 2 5 2 5 2',
-        #     '6 6 5 6 0 2 4 4'
-        # ]
-        _system = [
-            '12 17 9 5 13 24 22 2 9 5 15',
-            '4 19 5 21 2 26 20 21 8 21 17',
-            '16 21 1 28 21 24 16 16 7 8 15',
-            '24 25 12 26 9 27 27 17 5 19 15',
-            '23 15 15 18 0 1 19 3 2 16 10',
-            '12 16 5 11 27 11 4 15 1 2 11',
-            '0 24 14 6 26 6 25 8 7 17 21',
-            '20 6 24 20 17 6 0 25 7 13 9',
-            '5 7 14 24 9 28 15 8 11 8 0',
-            '5 7 13 18 6 17 5 8 24 10 0'
-        ]
-        _p = 29  # 349
-        _les = LinearEquationSystem(_system, _p)
-        assert M.det(_les.a, _les.p) != 0
-        _res = wiedemann2(_les)
-        print(_res)
-        print(M.mul(_les.a, M.t([_res]), _les.p) == _les.b)
+        _p, _n, _a = read('test.txt')
+        _les = LinearEquationSystem(_a, _p)
+        test_accuracy(_les)
     elif operation == '-g':
-        gen_test(10, 29)
+        gen_test(15, 31, '-s' in sys.argv)
     else:
-        print('Wrong operation')
+        print('Некорректная операция')
