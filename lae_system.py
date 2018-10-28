@@ -1,7 +1,8 @@
+import copy
 import sys
 import random
 
-from utils import Vector as V, Matrix as M, Polynomial as Poly, ratio
+from utils import Vector as V, Matrix as M, Polynomial as Poly, ratio, get_inverse
 
 MAX_TRIALS = 20
 
@@ -9,16 +10,49 @@ MAX_TRIALS = 20
 class LinearEquationSystem:
     def __init__(self, matrix, p):
         matrix = [row.split() for row in matrix]
-        self.p = p                   # поле вычетов
-        self.n = len(matrix)         # число уравнений
+        self.p = p  # поле вычетов
+        self.n = len(matrix)  # число уравнений
         self.m = len(matrix[0]) - 1  # число неизвестных
 
         self.a = [[int(matrix[i][j]) for j in range(self.m)] for i in range(self.n)]
         self.b = [[int(matrix[i][-1])] for i in range(self.n)]
 
 
+def find_nonzero(a, col):
+    for row in range(col, len(a)):
+        if a[row][col] != 0:
+            return row
+    return -1
+
+
 def gaussian(les: LinearEquationSystem):
-    pass
+    a, b = copy.deepcopy(les.a), copy.deepcopy(les.b)
+    n, m, p = les.n, les.m, les.p
+
+    for col in range(m):
+        row_replaced = find_nonzero(a, col)
+        if row_replaced == -1:
+            continue
+        if row_replaced != col:
+            a[col], a[row_replaced] = a[row_replaced], a[col]
+            b[col], b[row_replaced] = b[row_replaced], b[col]
+        for row in range(col + 1, n):
+            if a[row][col] != 0:
+                scalar = get_inverse(a[row][col], p) * a[col][col] % p
+                a[row] = V.mul_scalar(a[row], scalar, p)
+                a[row] = V.minus(a[row], a[col], p)
+                brow = b[row][0]
+                b[row] = [(brow * scalar - b[col][0]) % p]
+                assert a[row][col] == 0
+
+    x = [0] * m
+    for row in range(m - 1, -1, -1):
+        xcol = b[row][0]
+        for col in range(m - 1, row, -1):
+            xcol = (xcol - a[row][col] * x[col]) % p
+        xcol = xcol * get_inverse(a[row][row], p) % p
+        x[row] = xcol
+    return x
 
 
 def mul_a(x, y, a, p):
@@ -33,6 +67,12 @@ def alpha_ij(wi, wj, a, p):
 
 def lanczos(les: LinearEquationSystem):
     assert les.n == les.m
+    for row in range(les.n):
+        for col in range(row + 1):
+            if les.a[row][col] != les.a[col][row]:
+                print('Алгоритм Ланцоша : определен только для симмтеричных матриц, '
+                      'см. индексы ({0},{1}) и ({1},{0})'.format(row + 1, col + 1))
+                return
     p = les.p
     ws = [M.column(les.b, 0)]
     vs = [None, M.mul_vec(les.a, ws[0], p)]
@@ -183,7 +223,8 @@ def read(filename):
 
 
 #######################################################################
-FUNCS = [(lanczos, 'Алгоритм Ланцоша'),
+FUNCS = [(gaussian, 'Метод Гаусса'),
+         (lanczos, 'Алгоритм Ланцоша'),
          (wiedemann1, 'Алгоритм Видемана (вероятностный)')]
 
 
@@ -197,7 +238,7 @@ def test_accuracy(les):
             print(func_name, ':', x, 'Ответ верный' if correct else 'Ответ неверный')
 
 
-if __name__ == '__main__':
+def main():
     operation = sys.argv[1]
 
     if operation == '-a':
@@ -208,3 +249,7 @@ if __name__ == '__main__':
         gen_test(15, 31, '-s' in sys.argv)
     else:
         print('Некорректная операция')
+
+
+if __name__ == '__main__':
+    main()
