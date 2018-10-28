@@ -81,7 +81,7 @@ def lanczos(les: LinearEquationSystem):
                                    ratio(V.mul_sum(vs[1], vs[1], p),
                                          V.mul_sum(ws[0], vs[1], p), p), p), p))
 
-    for trial in range(MAX_TRIALS):
+    for trial in range(max(MAX_TRIALS, les.n)):
         if V.mul_sum(ws[-1], M.mul_vec(les.a, ws[-1], p), p) == 0:
             if V.is_zero(ws[-1]):
                 x = V.zero(les.n)
