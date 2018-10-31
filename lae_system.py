@@ -66,7 +66,7 @@ def all_solutions(a: list, d, p):
     n = len(a)
     a_mat = [a[:]] + M.unit(n, n)
     while len(list(filter(lambda el: el != 0, a_mat[0]))) > 1:
-        ai = min(a_mat[0])
+        ai = min(filter(lambda el: el != 0, a_mat[0]))
         i = a_mat[0].index(ai)
         j = next(filter(lambda jj: i != jj and a_mat[0][jj] != 0, range(n)))
         q, r, = divmod(a_mat[0][j], a_mat[0][i])
@@ -279,7 +279,7 @@ def main():
         les = LinearEquationSystem(a, p)
         test_accuracy(les)
     elif operation == '-g':
-        gen_test(3, 4, 7, '-s' in sys.argv)
+        gen_test(5, 9, 29, '-s' in sys.argv)
     elif operation == '-gauss':
         p, n, a = read('test.txt')
         les = LinearEquationSystem(a, p)
