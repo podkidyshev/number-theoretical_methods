@@ -45,14 +45,46 @@ def gaussian(les: LinearEquationSystem):
                 b[row] = [(brow * scalar - b[col][0]) % p]
                 assert a[row][col] == 0
 
-    x = [0] * m
-    for row in range(m - 1, -1, -1):
-        xcol = b[row][0]
-        for col in range(m - 1, row, -1):
-            xcol = (xcol - a[row][col] * x[col]) % p
-        xcol = xcol * get_inverse(a[row][row], p) % p
-        x[row] = xcol
-    return x
+    func = all_solutions(a[-1][n - 1:], b[-1][0], p)
+
+    def solution(t):
+        x = [0] * m
+        x[n - 1:] = func(t)
+        for row in range(n - 1, -1, -1):
+            xcol = b[row][0]
+            for col in range(m - 1, row, -1):
+                xcol = (xcol - a[row][col] * x[col]) % p
+            xcol = xcol * get_inverse(a[row][row], p) % p
+            x[row] = xcol
+        return x
+    return solution, m - n
+
+
+def all_solutions(a: list, d, p):
+    if not any(a):
+        raise ValueError('Найдена линейно-независимая строка')
+    n = len(a)
+    a_mat = [a[:]] + M.unit(n, n)
+    while len(list(filter(lambda el: el != 0, a_mat[0]))) > 1:
+        ai = min(a_mat[0])
+        i = a_mat[0].index(ai)
+        j = next(filter(lambda jj: i != jj and a_mat[0][jj] != 0, range(n)))
+        q, r, = divmod(a_mat[0][j], a_mat[0][i])
+        for row in range(n + 1):
+            a_mat[row][j] = (a_mat[row][j] - a_mat[row][i] * q) % p
+    lam = max(a_mat[0])
+    s = a_mat[0].index(lam)
+    dlam = ratio(d, lam, p)
+    c = a_mat[1:]
+
+    def solution(t):
+        t.insert(s, dlam)
+        # t[s:s] = dlam
+        x = V.zero(n)
+        for sol_i in range(n):
+                x = V.add(x, V.mul_scalar(M.column(c, sol_i), t[sol_i], p), p)
+        return x
+    return solution
 
 
 def mul_a(x, y, a, p):
@@ -200,17 +232,18 @@ def wiedemann2(les: LinearEquationSystem):
 
 
 #######################################################################
-def gen_test(size, p, sym):
-    a = [[random.randint(0, p - 1) for _j in range(size)] for _i in range(size)]
-    while M.det(a, p) == 0:
-        a = [[random.randint(0, p - 1) for _j in range(size)] for _i in range(size)]
+def gen_test(size_row, size_col, p, sym):
+    a = [[random.randint(0, p - 1) for _j in range(size_col)] for _i in range(size_row)]
+    if size_row == size_col:
+        while M.det(a, p) == 0:
+            a = [[random.randint(0, p - 1) for _j in range(size_col)] for _i in range(size_row)]
     if sym:
         for i in range(len(a)):
             for j in range(i + 1):
                 a[i][j] = a[j][i]
-    b = [[random.randint(0, p - 1)] for _i in range(size)]
+    b = [[random.randint(0, p - 1)] for _i in range(size_row)]
 
-    print(size, p)
+    print(size_row, p)
     for row, bi in zip(a, b):
         print(*row, *bi)
 
@@ -242,11 +275,27 @@ def main():
     operation = sys.argv[1]
 
     if operation == '-a':
-        _p, _n, _a = read('test.txt')
-        _les = LinearEquationSystem(_a, _p)
-        test_accuracy(_les)
+        p, n, a = read('test.txt')
+        les = LinearEquationSystem(a, p)
+        test_accuracy(les)
     elif operation == '-g':
-        gen_test(15, 31, '-s' in sys.argv)
+        gen_test(3, 4, 7, '-s' in sys.argv)
+    elif operation == '-gauss':
+        p, n, a = read('test.txt')
+        les = LinearEquationSystem(a, p)
+        sol, count = gaussian(les)
+        if count == 0:
+            x = sol([])
+            print('Решение:', x)
+            print('Ответ верный' if M.mul(les.a, M.t([x]), les.p) == les.b else 'Ответ неверный')
+            return
+        while True:
+            t = input('Введите {} чисел в Z_{} через пробел или -1 для выхода\n'.format(count, les.p))
+            if t == '-1':
+                return
+            x = sol(list(map(lambda el: int(el), t.split())))
+            print('Решение:', x)
+            print('Ответ верный' if M.mul(les.a, M.t([x]), les.p) == les.b else 'Ответ неверный')
     else:
         print('Некорректная операция')
 
